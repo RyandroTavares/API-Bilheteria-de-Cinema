@@ -16,25 +16,35 @@ Cada sala possui:
 * Quantidade de ingressos disponíveis (inicialmente 50)
 * Data prevista de saída
 
-O usuário pode também emitir ingressos (com assinatura digital RSA), verificar o status de todas as salas e filtrar filmes por nome ou data de saída prevista.
+O usuário pode também emitir ingressos, verificar o status de todas as salas e filtrar filmes por nome ou data de saída prevista.
+
+## Funcionalidades
+
+* Adicionar novo filme a uma sala
+* Remover ou atualizar filmes existentes
+* Emitir ingresso
+* Visualizar status completo das salas
+* Filtrar filmes por nome e data de saída
+* Persistência criptografada de dados (AES-GCM)
+* Armazenamento seguro de credenciais (PBKDF2 + SHA-256)
 
 ### Instalação
-```bash
+```
 pip install -r requirements.txt
 ```
 
 ### Execução
 Inicialize (gera chaves e senha administrativa):
-```bash
+```
 python -m src.main --init
 ```
 
 Rode o CLI:
-```bash
+```
 python -m src.main
 ```
 
 ### Testes
-```bash
+```
 pytest -q
 ```
