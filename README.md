@@ -6,7 +6,7 @@ assinatura de tickets (RSA) e armazenamento seguro de senha (PBKDF2 + SHA-256).
 
 ## Descrição
 
-O objetivo do programa é permitir ao usuário adicionar, remover e atualizar filmes em exibição em cada sala do cinema.
+O objetivo do programa é permitir ao usuário adicionar, remover e atualizar filmes em exibição em cada sala do cinema. O usuário pode também emitir ingressos, verificar o status de todas as salas e filtrar filmes por nome ou data de saída prevista.
 Cada sala possui:
 
 * Número da sala
@@ -15,8 +15,6 @@ Cada sala possui:
 * Idade mínima
 * Quantidade de ingressos disponíveis (inicialmente 50)
 * Data prevista de saída
-
-O usuário pode também emitir ingressos, verificar o status de todas as salas e filtrar filmes por nome ou data de saída prevista.
 
 ## Funcionalidades
 
