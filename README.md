@@ -1,7 +1,7 @@
 
 # Bilheteria de Cinema
 
-Em desenvolvimento
+**Em desenvolvimento.**
 Aplicação CLI em Python para gerenciar 5 salas de cinema com persistência criptografada (AES-GCM),
 assinatura de tickets (RSA) e armazenamento seguro de senha (PBKDF2 + SHA-256).
 
