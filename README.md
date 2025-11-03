@@ -22,7 +22,7 @@ Cada sala possui:
 * Remover ou atualizar filmes existentes
 * Emitir ingresso
 * Visualizar status completo das salas
-* Filtrar filmes por nome e data de saída
+* Filtrar filmes por nome ou data de saída
 * Persistência criptografada de dados (AES-GCM)
 * Armazenamento seguro de credenciais (PBKDF2 + SHA-256)
 
