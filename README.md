@@ -1,12 +1,22 @@
 
 # Bilheteria de Cinema - Em Desenvolvimento
 
-Aplicação CLI em Python para gerenciar 5 salas de cinema com persistência criptografada (AES-GCM),
-assinatura de tickets (RSA) e armazenamento seguro de senha (PBKDF2 + SHA-256).
+Aplicação CLI (Command-Line Interface) em Python para gerenciamento de 5 salas de cinema, com:
 
-## Descrição
+* Persistência criptografada do estado (AES-GCM)
+* Assinatura digital de tickets (RSA)
+* Armazenamento seguro de credenciais (PBKDF2-HMAC + SHA-256)
 
-O objetivo do programa é permitir ao usuário adicionar, remover e atualizar filmes em exibição em cada sala do cinema. O usuário pode também emitir ingressos, verificar o status de todas as salas e filtrar filmes por nome ou data de saída prevista.
+## Descrição Geral
+
+Este sistema permite gerenciar os filmes em exibição nas salas de um cinema, com possibilidade de:
+
+* Adicionar, remover ou atualizar filmes em cada sala
+* Emitir ingressos com assinatura digital
+* Visualizar a situação de todas as salas
+* Filtrar filmes por nome ou data de saída prevista
+* Garantir integridade e segurança utilizando criptografia e assinatura de dados
+
 Cada sala possui:
 
 * Número da sala
@@ -18,13 +28,14 @@ Cada sala possui:
 
 ## Funcionalidades
 
-* Adicionar novo filme a uma sala
-* Remover ou atualizar filmes existentes
-* Emitir ingresso
-* Visualizar status completo das salas
-* Filtrar filmes por nome e data de saída
-* Persistência criptografada de dados (AES-GCM)
-* Armazenamento seguro de credenciais (PBKDF2 + SHA-256)
+* Adicionar filme a uma sala
+* Atualizar ou remover filmes existentes
+* Emitir ingressos (com assinatura digital RSA)
+* Verificar tickets emitidos
+* Listar todas as salas com status completo
+* Filtrar filmes por nome ou data de saída
+* Persistir dados com criptografia (AES-GCM)
+* Armazenar senha administrativa de forma segura (PBKDF2 + SHA-256)
 
 ### Instalação
 ```
