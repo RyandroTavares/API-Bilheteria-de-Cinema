@@ -1,4 +1,5 @@
 
+from datetime import datetime
 from .models import Sala, Filme
 from .storage import encrypt_state, decrypt_state, STATE_FILE
 from .crypto_keys import generate_keys, load_private_key, load_public_key, sign_payload, verify_signature
@@ -44,7 +45,12 @@ def listar(state):
     for s in state["salas"]:
         f = s["filme"]
         if f:
-            rows.append([s["numero"], f["nome"], f["genero"], f["idade_minima"], f["ingressos"], f["data_saida"]])
+            try:
+                data_br = datetime.strptime(f["data_saida"], "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                data_br = f["data_saida"]
+            rows.append([s["numero"], f["nome"], f["genero"], f["idade_minima"], f["ingressos"], data_br])
+            
         else:
             rows.append([s["numero"], "-", "-", "-", "-", "-"])
     print(tabulate(rows, headers=["Sala","Filme","Gênero","Idade Min","Ingressos","Data Saída"]))
@@ -61,23 +67,78 @@ def adicionar_filme(state):
     except:
         print("Número inválido")
         return
+
     sala = encontrar_sala(state, numero)
     if not sala:
         print("Sala inexistente")
         return
+
     if sala["filme"]:
-        if input("Já há filme. Substituir? (s/N): ").lower()!="s":
+        if input("Já há filme. Substituir? (S/N): ").lower() != "s":
             return
+
     nome = input("Nome do filme: ").strip()
     genero = input("Gênero: ").strip()
-    idade = int(input("Idade mínima: ").strip())
-    data_saida = input("Data saída (YYYY-MM-DD): ").strip()
-    if not validar_data_iso(data_saida):
-        print("Data inválida")
-        return
-    filme = {"nome": nome, "genero": genero, "idade_minima": idade, "ingressos": 50, "data_saida": data_saida}
+
+    # Loop de validação da idade mínima
+    while True:
+        idade_str = input("Idade mínima [ou cancelar]: ").strip()
+
+        # Cancelar
+        if idade_str == "cancelar":
+            print("Operação cancelada.")
+            return
+
+        # Verificar se é um número inteiro
+        if not idade_str.isdigit():
+            print("❌ A idade mínima deve ser um número inteiro. Tente novamente.")
+            continue
+
+        idade = int(idade_str)
+
+        # Validar intervalo razoável
+        if idade < 1:
+            print("❌ A idade mínima deve ser 0 para livre ou superior.")
+            continue
+
+        # Valor aceito → sair do loop
+        break
+
+
+    # Loop de validação de data com formato brasileiro
+    while True:
+        data_br = input("Data de saída (DD/MM/AAAA) [ou cancelar]: ").strip()
+        if data_br == "cancelar":
+            print("Operação cancelada.")
+            return
+
+        try:
+            # Converter do formato brasileiro para datetime
+            data_saida = datetime.strptime(data_br, "%d/%m/%Y")
+
+            # Validar se é uma data futura
+            hoje = datetime.now()
+            if data_saida.date() <= hoje.date():
+                print("❌ A data de saída deve ser posterior à data de hoje.")
+                continue
+
+            # Converter para formato ISO antes de salvar
+            data_iso = data_saida.strftime("%Y-%m-%d")
+            break
+
+        except ValueError:
+            print("❌ Data inválida. Use o formato DD/MM/AAAA.")
+
+    filme = {
+        "nome": nome,
+        "genero": genero,
+        "idade_minima": idade,
+        "ingressos": 50,
+        "data_saida": data_iso  # Salva no formato ISO
+    }
+
     sala["filme"] = filme
-    print("Filme adicionado/atualizado.")
+    print(f"✅ Filme '{nome}' adicionado/atualizado com sucesso!")
 
 def remover_filme(state):
     numero = int(input("Número da sala: ").strip())
@@ -148,7 +209,7 @@ def filtrar(state):
     print(tabulate(rows, headers=["Sala","Filme","Data Saída","Ingressos"]))
 
 def resetar(state):
-    if input("Confirma resetar para estado inicial? (s/N): ").lower()!="s":
+    if input("Confirma resetar para estado inicial? (S/N): ").lower()!="s":
         return
     state["salas"] = [{"numero": i+1, "filme": None} for i in range(5)]
     print("Estado resetado.")

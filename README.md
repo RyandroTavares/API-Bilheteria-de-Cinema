@@ -44,5 +44,5 @@ python -m src.main
 
 ### Testes
 ```
-pytest -q
+python -m pytest -v
 ```
