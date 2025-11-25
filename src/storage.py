@@ -1,4 +1,3 @@
-
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -24,19 +23,22 @@ def encrypt_state(obj: dict, password: str):
         "ciphertext": base64.b64encode(ct).decode()
     }
     STATE_FILE.write_text(json.dumps(payload))
+    os.chmod(STATE_FILE, 0o600)
     return True
 
 def decrypt_state(password: str):
     if not STATE_FILE.exists():
         return None
+    
     payload = json.loads(STATE_FILE.read_text())
     salt = base64.b64decode(payload["salt"])
     nonce = base64.b64decode(payload["nonce"])
     ct = base64.b64decode(payload["ciphertext"])
+
     try:
         key = derive_key(password, salt)
         aesgcm = AESGCM(key)
         pt = aesgcm.decrypt(nonce, ct, None)
         return json.loads(pt.decode())
-    except Exception as e:
-        raise e
+    except Exception:
+        return None

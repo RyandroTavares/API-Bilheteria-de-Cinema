@@ -46,11 +46,16 @@ def generate_keys():
 
 def load_private_key():
     priv_path = _private_path()
-    if not priv_path.exists():
-        raise FileNotFoundError(f"Arquivo de chave privada não encontrado: {priv_path}")
-    senha = getpass.getpass("Digite a senha da chave privada: ").encode()
-    with open(priv_path, "rb") as f:
-        return serialization.load_pem_private_key(f.read(), password=senha)
+    try:
+        with open(priv_path, "rb") as f:
+            senha = getpass.getpass("Digite a senha da chave privada: ").encode()
+            return serialization.load_pem_private_key(f.read(), password=senha)
+    except ValueError:
+        print("❌ Senha incorreta! Não foi possível desbloquear a chave privada.")
+        return None
+    except FileNotFoundError:
+        print("❌ Arquivo de chave privada não encontrado.")
+        return None
 
 def load_public_key():
     pub_path = _public_path()

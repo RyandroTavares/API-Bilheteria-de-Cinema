@@ -1,8 +1,8 @@
+from datetime import datetime, date
 
-from datetime import datetime
 def validar_data_iso(s: str) -> bool:
     try:
-        datetime.strptime(s, "%Y-%m-%d")
-        return True
+        d = datetime.strptime(s, "%d/%m/%Y").date()
+        return d >= date.today()
     except Exception:
         return False

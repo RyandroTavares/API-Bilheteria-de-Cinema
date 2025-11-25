@@ -55,5 +55,5 @@ python -m src.main
 
 ### Testes
 ```
-python -m pytest -v
+python -m pytest
 ```

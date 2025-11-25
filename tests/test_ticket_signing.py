@@ -3,7 +3,7 @@ import json, getpass
 
 def test_sign_verify(tmp_path, monkeypatch):
     # simula digitação da senha durante os testes
-    monkeypatch.setattr(getpass, "getpass", lambda prompt="": "senha_teste")
+    monkeypatch.setattr(getpass, "getpass", lambda prompt="": "senh@_test3")
 
     # redireciona o diretório de chaves para dentro do tmp_path
     import src.crypto_keys as ck

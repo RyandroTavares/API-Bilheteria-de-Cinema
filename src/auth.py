@@ -1,7 +1,6 @@
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import constant_time
 import os, base64
 
 def gerar_salt(n=16):
