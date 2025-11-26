@@ -1,18 +1,29 @@
-import json, getpass, os
+# Imports padrão
+import json
+import getpass
+from datetime import datetime
+from pathlib import Path
+from typing import List
 
-from datetime import datetime, timezone
+# Imports internos
 from .models import Sala, Filme
 from .storage import encrypt_state, decrypt_state, STATE_FILE
 from .crypto_keys import generate_keys, load_public_key, verify_signature
 from .used_tickets import load_used_tickets, save_used_tickets
 from .utils import validar_data_br, converter_data_br_para_iso
-from .service import find_sala, add_filme_to_sala, remove_filme_from_sala, issue_ticket, filter_salas, initialize_state
-from pathlib import Path
+from .service import (
+    find_sala,
+    add_filme_to_sala,
+    remove_filme_from_sala,
+    issue_ticket,
+    filter_salas,
+    initialize_state,
+)
+
+# Import de terceiros
 from tabulate import tabulate
-from typing import List # <-- Adicionado para corrigir o NameError
 
 # Configuração de Arquivos
-# PW_FILE removido conforme solicitação
 TICKET_DIR = Path(__file__).resolve().parent.parent / "data" / "tickets"
 TICKET_DIR.mkdir(exist_ok=True)
 
@@ -22,9 +33,40 @@ def salas_to_dict_state(salas: List[Sala]) -> dict:
 
 # Helper para conversão de estado (Dict do Load -> Lista de Salas)
 def dict_state_to_salas(data: dict) -> List[Sala]:
-    if "salas" in data:
-        return [Sala.from_dict(s) for s in data["salas"]]
+    try:
+        if "salas" in data:
+            return [Sala.from_dict(s) for s in data["salas"]]
+    except Exception:
+        print("⚠️ Erro ao carregar salas do estado. Inicializando padrão.")
     return initialize_state()
+
+# Helpers de input validados
+def input_numero_sala(prompt="Número da sala (1-5): ") -> int | None:
+    try:
+        return int(input(prompt).strip())
+    except ValueError:
+        print("❌ Número inválido.")
+        return None
+
+def input_idade_minima(prompt="Idade mínima [0-18] (ou cancelar): ") -> int | None:
+    while True:
+        s = input(prompt).strip()
+        if s.lower() == "cancelar": return None
+        if s.isdigit() and 0 <= int(s) <= 18: return int(s)
+        print("❌ A idade mínima deve ser entre 0 e 18.")
+
+def input_data_futura(prompt="Data de saída (DD/MM/AAAA) [ou cancelar]: ") -> str | None:
+    while True:
+        s = input(prompt).strip()
+        if s.lower() == "cancelar": return None
+        try:
+            d = datetime.strptime(s, "%d/%m/%Y")
+            if d.date() <= datetime.now().date():
+                print("❌ A data deve ser futura.")
+                continue
+            return d.strftime("%Y-%m-%d")
+        except ValueError:
+            print("❌ Formato inválido. Use DD/MM/AAAA.")
 
 def init_app():
     """Inicializa as chaves RSA e o estado inicial, se não existirem."""
@@ -43,18 +85,19 @@ def init_app():
 
 
 def load_state_interactive() -> List[Sala]:
-    """Carrega o estado criptografado interativamente."""
     if not STATE_FILE.exists():
         print("Arquivo de estado não encontrado. Inicializando com salas padrão.")
         return initialize_state()
-        
-    pwd = getpass.getpass("Senha para descriptografar estado: ")
-    try:
-        data_dict = decrypt_state(pwd)
-        return dict_state_to_salas(data_dict)
-    except Exception:
-        print("Falha ao descriptografar. Modo somente leitura com estado vazio.")
-        return initialize_state()
+
+    for _ in range(3):  # 3 tentativas
+        pwd = getpass.getpass("Senha para descriptografar estado: ")
+        try:
+            data_dict = decrypt_state(pwd)
+            return dict_state_to_salas(data_dict)
+        except Exception:
+            print("❌ Falha ao descriptografar, tente novamente.")
+    print("Modo somente leitura com estado vazio.")
+    return initialize_state()
 
 def save_state_interactive(state: List[Sala]):
     """Salva o estado interativamente."""
@@ -67,28 +110,24 @@ def save_state_interactive(state: List[Sala]):
         print(f"❌ Falha ao salvar estado: {e}")
 
 def listar(state: List[Sala]):
-    """Lista o estado atual das salas usando o objeto Sala."""
+    """Lista o estado atual das salas usando tabela."""
     rows = []
     for s in state:
         f = s.filme
         if f:
-            # Formatação de data (só para exibição)
             try:
                 data_br = datetime.strptime(f.data_saida, "%Y-%m-%d").strftime("%d/%m/%Y")
             except ValueError:
-                data_br = f.data_saida # Mantém o ISO se falhar
+                data_br = f.data_saida
             rows.append([s.numero, f.nome, f.genero, f.idade_minima, f.ingressos, data_br])
         else:
             rows.append([s.numero, "-", "-", "-", "-", "-"])
     print(tabulate(rows, headers=["Sala","Filme","Gênero","Idade Min","Ingressos","Data Saída"]))
 
 def adicionar_filme(state: List[Sala]):
-    """Coleta dados e chama o serviço para adicionar o filme."""
-    try:
-        numero = int(input("Número da sala (1-5): ").strip())
-    except ValueError:
-        print("❌ Número inválido")
-        return
+    """Coleta dados e adiciona ou atualiza um filme em uma sala."""
+    numero = input_numero_sala()
+    if numero is None: return
 
     sala = find_sala(state, numero)
     if not sala:
@@ -101,53 +140,28 @@ def adicionar_filme(state: List[Sala]):
 
     nome = input("Nome do filme: ").strip()
     genero = input("Gênero: ").strip()
+    idade = input_idade_minima()
+    if idade is None: 
+        print("Operação cancelada.")
+        return
 
-    # Validação da idade mínima
-    while True:
-        idade_str = input("Idade mínima [ou cancelar]: ").strip()
-        if idade_str == "cancelar": return print("Operação cancelada.")
-        if not idade_str.isdigit() or not (0 <= (idade := int(idade_str)) <= 18):
-            print("❌ A idade mínima deve ser um número inteiro entre 0 (livre) e 18.")
-            continue
-        break
+    data_iso = input_data_futura()
+    if data_iso is None: 
+        print("Operação cancelada.")
+        return
 
-    # Validação de data (conversão de BR para ISO)
-    data_iso = None
-    while True:
-        data_br = input("Data de saída (DD/MM/AAAA) [ou cancelar]: ").strip()
-        if data_br == "cancelar": return print("Operação cancelada.")
-
-        try:
-            data_saida = datetime.strptime(data_br, "%d/%m/%Y")
-            hoje = datetime.now()
-            
-            # Garante que a data é futura
-            if data_saida.date() <= hoje.date():
-                print("❌ A data de saída deve ser posterior à data de hoje.")
-                continue
-
-            data_iso = data_saida.strftime("%Y-%m-%d")
-            break
-        except ValueError:
-            print("❌ Data inválida. Use o formato DD/MM/AAAA.")
-            
-    # Chama o serviço (Lógica de Negócio)
     add_filme_to_sala(sala, nome, genero, idade, data_iso)
     print(f"✅ Filme '{nome}' adicionado/atualizado na Sala {numero} com sucesso!")
 
 def remover_filme(state: List[Sala]):
-    """Coleta dados e chama o serviço para remover o filme."""
-    try:
-        numero = int(input("Número da sala: ").strip())
-    except ValueError:
-        print("❌ Número inválido.")
-        return
-        
+    numero = input_numero_sala()
+    if numero is None: return
+
     sala = find_sala(state, numero)
     if not sala or sala.esta_vazia():
         print("❌ Sala vazia ou inexistente.")
         return
-        
+
     remove_filme_from_sala(sala)
     print(f"✅ Filme removido da Sala {numero}.")
 
@@ -294,9 +308,7 @@ def filtrar(state):
     print("\n=== FILTRAR FILMES ===")
     nome = input("Nome parcial do filme (ou vazio): ").strip()
 
-    # -------------------------------
     # LOOP PARA DATA "DE"
-    # -------------------------------
     while True:
         data_de_br = input("Data de (DD/MM/AAAA) [ou cancelar]: ").strip()
 
@@ -315,9 +327,7 @@ def filtrar(state):
         data_de_iso = converter_data_br_para_iso(data_de_br)
         break
 
-    # -------------------------------
     # LOOP PARA DATA "ATÉ"
-    # -------------------------------
     while True:
         data_ate_br = input("Data até (DD/MM/AAAA) [ou cancelar]: ").strip()
 
