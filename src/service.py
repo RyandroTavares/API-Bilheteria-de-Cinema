@@ -83,40 +83,37 @@ def issue_ticket(sala: Sala) -> Dict[str, Any]:
 
     return ticket_payload
 
-def filter_salas(state: List[Sala], nome_parcial: str = "", data_de: str = "", data_ate: str = "") -> List[Dict[str, Any]]:
-    """
-    Filtra as salas baseadas em nome e datas.
-    Retorna uma lista de dicionários para exibição.
-    """
-    results = []
+def filter_salas(
+    state: List[Sala],
+    nome_parcial: str = "",
+    data_de: str = "",
+    data_ate: str = ""
+) -> List[Sala]:
+
+    resultados = []
     nome_lower = nome_parcial.strip().lower()
 
     for sala in state:
         f = sala.filme
         if not f:
             continue
-        
-        # Filtro por Nome
+
+        # Filtro por nome
         if nome_lower and nome_lower not in f.nome.lower():
             continue
-            
-        # Filtro por Data 'De' (saída deve ser >= data_de)
+
+        # Filtro por Data "De"
         if data_de and f.data_saida < data_de:
             continue
-            
-        # Filtro por Data 'Até' (saída deve ser <= data_ate)
+
+        # Filtro por Data "Até"
         if data_ate and f.data_saida > data_ate:
             continue
 
-        # Adiciona à lista de resultados formatados
-        results.append({
-            "numero": sala.numero,
-            "nome": f.nome,
-            "data_saida": f.data_saida,
-            "ingressos": f.ingressos
-        })
-        
-    return results
+        # Retornamos o OBJETO Sala
+        resultados.append(sala)
+
+    return resultados
 
 def reset_state() -> List[Sala]:
     """Reseta o estado para o padrão inicial."""
