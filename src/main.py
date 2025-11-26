@@ -1,5 +1,6 @@
 import argparse
 from .cli import init_app, menu_loop
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--init", action="store_true", help="Inicializar app (gerar chaves e senha)")

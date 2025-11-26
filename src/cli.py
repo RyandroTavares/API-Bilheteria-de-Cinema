@@ -1,11 +1,13 @@
+import json, getpass, os
+
 from datetime import datetime, timezone
 from .models import Sala, Filme
 from .storage import encrypt_state, decrypt_state, STATE_FILE
 from .crypto_keys import generate_keys, load_public_key, verify_signature
-from .utils import validar_data_iso
+from .used_tickets import load_used_tickets, save_used_tickets
+from .utils import validar_data_br, converter_data_br_para_iso
 from .service import find_sala, add_filme_to_sala, remove_filme_from_sala, issue_ticket, filter_salas, initialize_state
 from pathlib import Path
-import json, getpass, os
 from tabulate import tabulate
 from typing import List # <-- Adicionado para corrigir o NameError
 
@@ -181,68 +183,177 @@ def emitir(state: List[Sala]):
         print(f"❌ Ocorreu um erro inesperado: {e}")
 
 
-def verificar_ticket():
-    """Verifica a validade de um ticket assinado."""
-    path = input("Caminho do ticket: ").strip()
-    p = Path(path)
-    if not p.exists():
-        print("❌ Arquivo de ticket não encontrado.")
+def verificar_ticket(state):
+    """
+    Verifica a validade de um ticket assinado (JSON), aceitando JSON em múltiplas linhas.
+    Também garante anti-reutilização gravando o ID do ticket em data/used_tickets.json.
+    """
+    print("\n=== VERIFICAR TICKET ===")
+    print("Cole o ticket JSON (finalize com uma linha vazia) ou informe caminho do arquivo:")
+
+    # Leitura do input
+    entrada = []
+    while True:
+        linha = input()
+        if linha.strip() == "":
+            break
+        entrada.append(linha)
+
+    if not entrada:
+        print("Nenhum ticket informado.")
         return
-        
+
+    # Se for apenas um caminho de arquivo
+    if len(entrada) == 1:
+        p = Path(entrada[0].strip())
+        if p.exists():
+            try:
+                ticket_text = p.read_text(encoding="utf-8")
+            except Exception as e:
+                print(f"❌ Falha ao ler o arquivo: {e}")
+                return
+        else:
+            ticket_text = entrada[0]
+    else:
+        ticket_text = "\n".join(entrada)
+
+    # Parse JSON
     try:
-        obj = json.loads(p.read_text())
-        sig_hex = obj.pop("assinatura", None)
-        
-        if not sig_hex:
-            print("❌ Ticket sem assinatura.")
-            return
+        ticket_obj = json.loads(ticket_text)
+    except Exception:
+        print("❌ Ticket inválido: formato JSON incorreto.")
+        return
 
-        # Converte assinatura de hex para bytes
-        sig = bytes.fromhex(sig_hex) 
+    # Campos obrigatórios
+    obrigatorios = {"id", "sala", "filme", "emissao", "assinatura"}
+    if not obrigatorios.issubset(ticket_obj.keys()):
+        print("❌ Ticket inválido: campos obrigatórios ausentes.")
+        return
 
+    sig_hex = ticket_obj.pop("assinatura", None)
+    if not sig_hex:
+        print("❌ Ticket sem assinatura. INVÁLIDO.")
+        return
+
+    # Recria o payload EXATAMENTE como foi assinado (sort_keys=True)
+    try:
+        payload = json.dumps(ticket_obj, sort_keys=True, ensure_ascii=False).encode()
+    except Exception as e:
+        print(f"❌ Erro ao serializar payload para verificação: {e}")
+        return
+
+    # Converte assinatura para bytes
+    try:
+        sig = bytes.fromhex(sig_hex)
+    except Exception:
+        print("❌ Assinatura em formato inválido.")
+        return
+
+    # Carrega chave pública e verifica a assinatura
+    try:
         pub = load_public_key()
-        
-        # Recria o payload EXATAMENTE como foi assinado (sort_keys=True)
-        payload = json.dumps(obj, sort_keys=True, ensure_ascii=False).encode()
-        
-        ok = verify_signature(pub, payload, sig)
-        
-        print("\n=== Verificação do Ticket ===")
-        print(f"ID: {obj['id']}")
-        print(f"Filme: {obj['filme']}")
-        print(f"Sala: {obj['sala']}")
-        print("----------------------------")
-        print("Assinatura válida?" , "✅ SIM" if ok else "❌ NÃO")
-        print("----------------------------")
-
     except FileNotFoundError:
         print("❌ Arquivo de chave pública não encontrado. Impossível verificar.")
-    except Exception as e:
-        print(f"❌ Erro ao verificar ticket: {e}")
-
-def filtrar(state: List[Sala]):
-    """Coleta parâmetros de filtro e exibe os resultados do serviço."""
-    nome = input("Filtrar por nome (parcial, vazio ignora): ").strip()
-    data_de = input("Data de (YYYY-MM-DD) (vazio ignora): ").strip()
-    data_ate = input("Data até (YYYY-MM-DD) (vazio ignora): ").strip()
-
-    # Chama o serviço
-    rows = filter_salas(state, nome, data_de, data_ate)
-    
-    if not rows:
-        print("Nenhum filme encontrado com os critérios.")
         return
-        
-    # Formata a data para exibição (se necessário)
-    display_rows = []
-    for r in rows:
-         try:
-            data_br = datetime.strptime(r["data_saida"], "%Y-%m-%d").strftime("%d/%m/%Y")
-         except ValueError:
-            data_br = r["data_saida"]
-         display_rows.append([r["numero"], r["nome"], data_br, r["ingressos"]])
-         
-    print(tabulate(display_rows, headers=["Sala","Filme","Data Saída","Ingressos"]))
+    except Exception as e:
+        print(f"❌ Erro ao carregar chave pública: {e}")
+        return
+
+    ok = False
+    try:
+        ok = verify_signature(pub, payload, sig)
+    except Exception:
+        ok = False
+
+    if not ok:
+        print("❌ Assinatura inválida — ticket falsificado ou corrompido.")
+        return
+
+    # Controle anti-reutilização (arquivo de usados)
+    used = load_used_tickets()  # set de IDs
+    ticket_id = ticket_obj.get("id")
+    if ticket_id in used:
+        print("❌ Ticket já foi utilizado anteriormente! Acesso NEGADO.")
+        return
+
+    # Marca como usado e salva
+    used.add(ticket_id)
+    save_used_tickets(used)
+
+    # Exibição e sucesso
+    print("\n=== Ticket VÁLIDO ===")
+    print(f"ID: {ticket_obj.get('id')}")
+    print(f"Filme: {ticket_obj.get('filme')}")
+    print(f"Sala: {ticket_obj.get('sala')}")
+    print("Assinatura válida: ✅")
+    print("Ticket agora registrado como utilizado (não pode ser reaproveitado).")
+    print()
+
+
+def filtrar(state):
+    print("\n=== FILTRAR FILMES ===")
+    nome = input("Nome parcial do filme (ou vazio): ").strip()
+
+    # -------------------------------
+    # LOOP PARA DATA "DE"
+    # -------------------------------
+    while True:
+        data_de_br = input("Data de (DD/MM/AAAA) [ou cancelar]: ").strip()
+
+        if data_de_br.lower() == "cancelar":
+            print("Operação cancelada.")
+            return
+
+        if data_de_br == "":
+            data_de_iso = ""
+            break
+
+        if not validar_data_br(data_de_br):
+            print("❌ Data 'De' inválida. Use DD/MM/AAAA.")
+            continue
+
+        data_de_iso = converter_data_br_para_iso(data_de_br)
+        break
+
+    # -------------------------------
+    # LOOP PARA DATA "ATÉ"
+    # -------------------------------
+    while True:
+        data_ate_br = input("Data até (DD/MM/AAAA) [ou cancelar]: ").strip()
+
+        if data_ate_br.lower() == "cancelar":
+            print("Operação cancelada.")
+            return
+
+        if data_ate_br == "":
+            data_ate_iso = ""
+            break
+
+        if not validar_data_br(data_ate_br):
+            print("❌ Data 'Até' inválida. Use DD/MM/AAAA.")
+            continue
+
+        data_ate_iso = converter_data_br_para_iso(data_ate_br)
+        break
+
+    # -------------------------------
+    # CHAMADA DO FILTRO
+    # -------------------------------
+    resultados = filter_salas(
+        state,
+        nome_parcial=nome,
+        data_de=data_de_iso,
+        data_ate=data_ate_iso
+    )
+
+    if not resultados:
+        print("\nNenhum filme encontrado com esses critérios.\n")
+        return
+
+    print("\n--- RESULTADOS ---")
+    for r in resultados:
+        print(f"Sala {r['numero']} | {r['nome']} | Saída: {r['data_saida']} | Ingressos: {r['ingressos']}")
+    print()
 
 def resetar(state: List[Sala]):
     """Reseta o estado, chamando o serviço e substituindo a lista de salas."""
@@ -255,8 +366,19 @@ def resetar(state: List[Sala]):
 
 def menu_loop():
     """Loop principal da CLI."""
-    # O estado agora é uma lista de objetos Sala
-    state = load_state_interactive() 
+    state = load_state_interactive()
+
+    opcoes = {
+        "1": listar,
+        "2": adicionar_filme,
+        "3": remover_filme,
+        "4": emitir,
+        "5": filtrar,
+        "6": verificar_ticket,
+        "7": save_state_interactive,
+        "8": resetar,
+    }
+
     while True:
         print("\n== Bilheteria ==")
         print("1 Listar salas")
@@ -269,24 +391,10 @@ def menu_loop():
         print("8 Resetar estado")
         print("0 Sair")
         op = input("Opção: ").strip()
-        
-        if op=="1":
-            listar(state)
-        elif op=="2":
-            adicionar_filme(state)
-        elif op=="3":
-            remover_filme(state)
-        elif op=="4":
-            emitir(state)
-        elif op=="5":
-            filtrar(state)
-        elif op=="6":
-            verificar_ticket()
-        elif op=="7":
-            save_state_interactive(state)
-        elif op=="8":
-            resetar(state)
-        elif op=="0":
+
+        if op == "0":
             break
+        elif op in opcoes:
+            opcoes[op](state)
         else:
             print("Opção inválida.")
