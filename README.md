@@ -43,7 +43,7 @@ pip install -r requirements.txt
 ```
 
 ### Execução
-Inicialize (gera chaves e senha administrativa):
+Inicialize (gera chaves):
 ```
 python -m src.main --init
 ```
@@ -56,4 +56,6 @@ python -m src.main
 ### Testes
 ```
 python -m pytest
+ou
+python -m pytest -v
 ```
