@@ -3,8 +3,6 @@ from unittest.mock import MagicMock, patch
 from src.models import Sala
 from src.service import add_filme_to_sala, issue_ticket
 
-# Testes de Ingressos com Mock de Chave Privada
-
 # CT03 - Emissão de ingresso normal
 def test_emitir_ticket_mock():
     sala = Sala(numero=1)
@@ -48,7 +46,7 @@ def test_emitir_ticket_idade_minima_mock():
     assert ticket["filme"] == "Filme Adulto"
     assert sala.filme.ingressos == 49
 
-# CT03b - Simulando idade maior que mínima (mesmo comportamento do service)
+# CT03c - Simulando idade maior que mínima (mesmo comportamento do service)
 def test_emitir_ticket_idade_invalida_mock():
     sala = Sala(numero=1)
     add_filme_to_sala(sala, "Filme Adulto", "Drama", 18, "2025-12-31")
@@ -63,7 +61,7 @@ def test_emitir_ticket_idade_invalida_mock():
     assert ticket["filme"] == "Filme Adulto"
     assert sala.filme.ingressos == 49
 
-# CT03c - Limite de ingressos: decremento para 0 e erro na próxima emissão
+# CT03d - Limite de ingressos: decremento para 0 e erro na próxima emissão
 def test_emitir_ticket_ultimo_ingresso():
     sala = Sala(numero=1)
     add_filme_to_sala(sala, "Filme Teste", "Ação", 12, "2025-12-31")

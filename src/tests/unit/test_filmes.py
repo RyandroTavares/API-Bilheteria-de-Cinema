@@ -3,7 +3,6 @@ from src.models import Sala
 from src.service import add_filme_to_sala, remove_filme_from_sala
 
 # Testes RF01 – Adição de Filmes
-
 @pytest.fixture
 def sala_vazia():
     """Cria uma sala vazia para testes."""
@@ -23,13 +22,14 @@ def test_adicionar_filme_valido(sala_vazia):
     # Confirma que data foi convertida para ISO
     assert sala_vazia.filme.data_saida == "2025-12-31"
 
-# CT01 - Adição de filmes inválidos
+# CT01a1 - Adicionar filme com idade negativa (inválido)
 def test_adicionar_filme_idade_negativa():
     sala = Sala(numero=1)
     # Idade mínima negativa
     with pytest.raises(ValueError):
         add_filme_to_sala(sala, "Filme Inválido", "Ação", -5, "2025-12-31")
 
+# CT01a2 - Adicionar filme com data inválida
 def test_adicionar_filme_data_invalida():
     sala = Sala(numero=1)
     # Data inválida (formato incorreto)
@@ -44,19 +44,21 @@ def test_adicionar_filme_data_invalida():
     with pytest.raises(ValueError):
         add_filme_to_sala(sala, "Filme Inválido", "Ação", 12, "2000-01-01")
 
+# CT01a3 - Adicionar filme com nome vazio (inválido)
 def test_adicionar_filme_nome_vazio():
     sala = Sala(numero=1)
     # Nome vazio
     with pytest.raises(ValueError):
         add_filme_to_sala(sala, "", "Ação", 12, "2025-12-31")
 
+# CT01a4 - Adicionar filme com gênero vazio (inválido)
 def test_adicionar_filme_genero_vazio():
     sala = Sala(numero=1)
     # Gênero vazio
     with pytest.raises(ValueError):
         add_filme_to_sala(sala, "Filme Inválido", "", 12, "2025-12-31")
 
-# CT01a - Adição quando já existe filme (substituição)
+# CT01b - Adição quando já existe filme (substituição)
 def test_adicionar_filme_substituicao(sala_vazia):
     add_filme_to_sala(sala_vazia, "Filme 1", "Ação", 12, "2025-12-31")
     assert sala_vazia.filme.nome == "Filme 1"
