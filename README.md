@@ -59,9 +59,9 @@ python -m src.main
 python -m pytest
 
 # Para executar testes específicos, use os comandos correspondentes:
-python -m pytest test/unit        # Testes unitários
-python -m pytest test/integration # Testes de integração
-python -m pytest test/system      # Testes de sistema
+python -m pytest tests/unit        # Testes unitários
+python -m pytest tests/integration # Testes de integração
+python -m pytest tests/system      # Testes de sistema
 
 # Para obter mais detalhes durante a execução dos testes, adicione a opção -v (verbose). Por exemplo:
 python -m pytest -v

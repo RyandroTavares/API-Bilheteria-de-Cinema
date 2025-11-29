@@ -21,7 +21,7 @@ from .utils import (
 
 # Configuração de tickets
 TICKET_DIR = Path(__file__).resolve().parent.parent / "data" / "tickets"
-TICKET_DIR.mkdir(exist_ok=True)
+TICKET_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_filme(sala):
     return sala.filme if hasattr(sala, "filme") else sala["filme"]

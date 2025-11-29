@@ -1,6 +1,0 @@
-[project]
-name = "bilheteria"
-version = "0.1.0"
-description = "Bilheteria de Cinema - CLI com criptografia"
-authors = [{name="Generated", email="noreply@example.com"}]
-requires-python = ">=3.11"
