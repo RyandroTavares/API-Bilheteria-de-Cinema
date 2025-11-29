@@ -34,8 +34,7 @@ Cada sala possui:
 * Verificar tickets emitidos
 * Listar todas as salas com status completo
 * Filtrar filmes por nome ou data de saída
-* Persistir dados com criptografia (AES-GCM)
-* Armazenar senha administrativa de forma segura (PBKDF2 + SHA-256)
+* Persistir dados criptografados usando AES-GCM com chave derivada por PBKDF2 (SHA-256).
 
 ### Requisitos
 
@@ -50,6 +49,7 @@ Cada sala possui:
 
 ### Instalação
 ```
+Dentro da pasta src onde possui no mesmo nível o arquivo requirements.txt use o comando:
 pip install -r requirements.txt
 ```
 
