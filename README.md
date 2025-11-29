@@ -49,7 +49,7 @@ Cada sala possui:
 
 ### Instalação
 ```
-Dentro da pasta src onde possui no mesmo nível o arquivo requirements.txt use o comando:
+Dentro da pasta src onde possui no mesmo nível o arquivo requirements.txt use o comando (Isso serve para todos os demais comandos):
 pip install -r requirements.txt
 ```
 
