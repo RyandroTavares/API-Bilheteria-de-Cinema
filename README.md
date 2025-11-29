@@ -37,6 +37,18 @@ Cada sala possui:
 * Persistir dados com criptografia (AES-GCM)
 * Armazenar senha administrativa de forma segura (PBKDF2 + SHA-256)
 
+### Requisitos
+
+* Python 3.x
+* Extensões recomendadas para VS Code:
+- Python
+- Pylance
+* Dependências Python (automáticas via `pip install -r requirements.txt`):
+- cryptography>=41.0.0
+- tabulate
+- pytest
+
+
 ### Instalação
 ```
 pip install -r requirements.txt
