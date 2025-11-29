@@ -39,7 +39,7 @@ Cada sala possui:
 
 ### Requisitos
 
-* Python 3.x
+* Python 3.13.x
 * Extensões recomendadas para VS Code:
 - Python
 - Pylance
@@ -47,7 +47,6 @@ Cada sala possui:
 - cryptography>=41.0.0
 - tabulate
 - pytest
-
 
 ### Instalação
 ```
