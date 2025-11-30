@@ -5,7 +5,7 @@ Aplicação CLI (Command-Line Interface) em Python para gerenciamento de 5 salas
 
 * Persistência criptografada do estado (AES-GCM)
 * Assinatura digital de tickets (RSA)
-* Armazenamento seguro de credenciais (PBKDF2-HMAC + SHA-256)
+* Derivação segura de chave via PBKDF2-HMAC + SHA-256
 
 ## Descrição Geral
 
