@@ -5,8 +5,8 @@ from src.service import add_filme_to_sala, filter_salas
 # CT05 - Filtrar por nome e datas
 def test_filtrar_por_nome_e_data():
     salas = [Sala(numero=1), Sala(numero=2)]
-    add_filme_to_sala(salas[0], "Aventura", "Ação", 12, "2025-12-31")
-    add_filme_to_sala(salas[1], "Comédia", "Comédia", 10, "2025-11-30")
+    add_filme_to_sala(salas[0], "Aventura", "Ação", 12, "2026-12-31")
+    add_filme_to_sala(salas[1], "Comédia", "Comédia", 10, "2026-11-30")
     resultados = filter_salas(salas, nome_parcial="Aventura")
     assert len(resultados) == 1
     assert resultados[0].filme.nome == "Aventura"
