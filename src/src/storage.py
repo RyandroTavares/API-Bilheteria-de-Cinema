@@ -18,11 +18,14 @@ def encrypt_state(obj: dict, password: str):
     nonce = os.urandom(12)
     ct = aesgcm.encrypt(nonce, data, None)
     payload = {
-        "salt": base64.b64encode(salt).decode(),
-        "nonce": base64.b64encode(nonce).decode(),
-        "ciphertext": base64.b64encode(ct).decode()
+        "salt": base64.b64encode(salt).decode("utf-8"),
+        "nonce": base64.b64encode(nonce).decode("utf-8"),
+        "ciphertext": base64.b64encode(ct).decode("utf-8")
     }
-    STATE_FILE.write_text(json.dumps(payload))
+    STATE_FILE.write_text(
+    json.dumps(payload, ensure_ascii=False),
+    encoding="utf-8"
+)
     os.chmod(STATE_FILE, 0o600)
     return True
 
@@ -30,7 +33,7 @@ def decrypt_state(password: str):
     if not STATE_FILE.exists():
         return None
     
-    payload = json.loads(STATE_FILE.read_text())
+    payload = json.loads(STATE_FILE.read_text(encoding="utf-8"))
     salt = base64.b64decode(payload["salt"])
     nonce = base64.b64decode(payload["nonce"])
     ct = base64.b64decode(payload["ciphertext"])

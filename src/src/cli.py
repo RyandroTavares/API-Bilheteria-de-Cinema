@@ -99,7 +99,10 @@ def emitir(state: List[Sala]):
         path = TICKET_DIR / f"ticket_{ticket['id']}.json"
         ticket_json_output = ticket.copy()
         ticket_json_output["assinatura"] = ticket["assinatura"]
-        path.write_text(json.dumps(ticket_json_output, ensure_ascii=False, indent=2))
+        path.write_text(
+            json.dumps(ticket_json_output, ensure_ascii=False, indent=2),
+            encoding="utf-8"
+        )
         print(f"🎟️ Ticket emitido para {sala.filme.nome} - Sala {numero}")
         print("Ticket gerado:", path)
     except Exception as e:
